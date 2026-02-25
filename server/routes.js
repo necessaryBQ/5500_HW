@@ -25,8 +25,8 @@ connection.connect((err) => err && console.log(err));
 // Route 1: GET /author/:type
 const author = async function(req, res) {
   // TODO (TASK 1): replace the values of name and pennkey with your own
-  const name = 'John Doe';
-  const pennkey = 'jdoe';
+  const name = 'Emma Kirman';
+  const pennkey = 'emmjiang';
 
   // checks the value of type in the request parameters
   // note that parameters are required and are specified in server.js in the endpoint by a colon (e.g. /author/:type)
@@ -35,6 +35,8 @@ const author = async function(req, res) {
     res.json({ data: name });
   } else if (null) {
     // TODO (TASK 2): edit the else if condition to check if the request parameter is 'pennkey' and if so, send back a JSON response with the pennkey
+  } else if (req.params.type === 'pennkey') {
+    res.json({ data: pennkey });
   } else {
     res.status(400).json({});
   }
@@ -70,6 +72,7 @@ const random = async function(req, res) {
       // TODO (TASK 3): also return the song title in the response
       res.json({
         song_id: data.rows[0].song_id,
+          title: data.rows[0].title
       });
     }
   });
@@ -84,7 +87,7 @@ const song = async function(req, res) {
   // TODO (TASK 4): implement a route that given a song_id, returns all information about the song
   // Hint: unlike route 2, you can directly SELECT * and just return data.rows[0]
   // Most of the code is already written for you, you just need to fill in the query
-  connection.query(``, (err, data) => {
+  connection.query(`  SELECT * FROM Songs WHERE song_id = '${req.params.song_id}'`, (err, data) => {
     if (err) {
       console.log(err);
       res.json({});
