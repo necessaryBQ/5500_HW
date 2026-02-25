@@ -100,20 +100,38 @@ const song = async function(req, res) {
 // Route 4: GET /album/:album_id
 const album = async function(req, res) {
   // TODO (TASK 5): implement a route that given a album_id, returns all information about the album
-  res.json({}); // replace this with your implementation
+  connection.query(`
+  SELECT * FROM Albums WHERE album_id = '${req.params.album_id}'
+`, (err, data) => {
+  if (err) { console.log(err); res.json({}); }
+  else { res.json(data.rows[0]); }
+}); // replace this with your implementation
 }
 
 // Route 5: GET /albums
 const albums = async function(req, res) {
   // TODO (TASK 6): implement a route that returns all albums ordered by release date (descending)
   // Note that in this case you will need to return multiple albums, so you will need to return an array of objects
-  res.json([]); // replace this with your implementation
+  connection.query(`
+  SELECT * FROM Albums ORDER BY release_date DESC
+`, (err, data) => {
+  if (err) { console.log(err); res.json([]); }
+  else { res.json(data.rows); }
+});; // replace this with your implementation
 }
 
 // Route 6: GET /album_songs/:album_id
 const album_songs = async function(req, res) {
   // TODO (TASK 7): implement a route that given an album_id, returns all songs on that album ordered by track number (ascending)
-  res.json([]); // replace this with your implementation
+  connection.query(`
+  SELECT song_id, title, number, duration, plays
+  FROM Songs
+  WHERE album_id = '${req.params.album_id}'
+  ORDER BY number ASC
+`, (err, data) => {
+  if (err) { console.log(err); res.json([]); }
+  else { res.json(data.rows); }
+}); // replace this with your implementation
 }
 
 /************************
@@ -124,16 +142,31 @@ const album_songs = async function(req, res) {
 const top_songs = async function(req, res) {
   const page = req.query.page;
   // TODO (TASK 8): use the ternary (or nullish) operator to set the pageSize based on the query or default to 10
-  const pageSize = undefined;
+  const pageSize = req.query.page_size ?? 10;
 
   if (!page) {
     // TODO (TASK 9)): query the database and return all songs ordered by number of plays (descending)
     // Hint: you will need to use a JOIN to get the album title as well
-    res.json([]); // replace this with your implementation
+    connection.query(`
+  SELECT s.song_id, s.title, s.album_id, a.title AS album, s.plays
+  FROM Songs s JOIN Albums a ON s.album_id = a.album_id
+  ORDER BY s.plays DESC
+`, (err, data) => {
+  if (err) { console.log(err); res.json([]); }
+  else { res.json(data.rows); }
+});// replace this with your implementation
   } else {
     // TODO (TASK 10): reimplement TASK 9 with pagination
     // Hint: use LIMIT and OFFSET (see https://www.w3schools.com/php/php_mysql_select_limit.asp)
-    res.json([]); // replace this with your implementation
+    connection.query(`
+  SELECT s.song_id, s.title, s.album_id, a.title AS album, s.plays
+  FROM Songs s JOIN Albums a ON s.album_id = a.album_id
+  ORDER BY s.plays DESC
+  LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}
+`, (err, data) => {
+  if (err) { console.log(err); res.json([]); }
+  else { res.json(data.rows); }
+});// replace this with your implementation
   }
 }
 
@@ -141,7 +174,23 @@ const top_songs = async function(req, res) {
 const top_albums = async function(req, res) {
   // TODO (TASK 11): return the top albums ordered by aggregate number of plays of all songs on the album (descending), with optional pagination (as in route 7)
   // Hint: you will need to use a JOIN and aggregation to get the total plays of songs in an album
-  res.json([]); // replace this with your implementation
+  const page = req.query.page;
+const pageSize = req.query.page_size ?? 10;
+
+const paginationClause = page
+  ? `LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`
+  : '';
+
+connection.query(`
+  SELECT a.album_id, a.title, SUM(s.plays) AS plays
+  FROM Albums a JOIN Songs s ON a.album_id = s.album_id
+  GROUP BY a.album_id, a.title
+  ORDER BY plays DESC
+  ${paginationClause}
+`, (err, data) => {
+  if (err) { console.log(err); res.json([]); }
+  else { res.json(data.rows); }
+});// replace this with your implementation
 }
 
 // Route 9: GET /search_songs
